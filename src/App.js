@@ -17432,11 +17432,11 @@ const App = () => {
             mae: parseFloat(mae.trim().replace(',', '.')), // Reemplazar coma por punto
           };
         });
-        console.log('Modelos cargados:', modelosData);
+        console.log('Modelos cargados:', modelosData); // Debug
         setModelos(modelosData);
       })
       .catch(err => console.error('Error cargando modelos:', err));
-
+  
     // Cargar predicciones
     fetch('/predicciones.csv')
       .then(response => response.text())
@@ -17444,21 +17444,21 @@ const App = () => {
         const lines = text.trim().split('\n');
         const headers = lines[0].split(/\t/).map(header => header.trim());
         const prediccionesData = {};
-
+  
         lines.slice(1).forEach(line => {
           const values = line.split(/\t/).map(value => value.trim());
           const id = values[0];
           const prediccionesMes = {};
-
+  
           headers.slice(1).forEach((month, index) => {
             const valor = parseFloat(values[index + 1]?.replace(',', '.'));
             prediccionesMes[month] = isNaN(valor) ? 0 : valor;
           });
-
+  
           prediccionesData[id] = prediccionesMes;
         });
-
-        console.log('Predicciones cargadas:', prediccionesData);
+  
+        console.log('Predicciones cargadas:', prediccionesData); // Debug
         setPredicciones(prediccionesData);
       })
       .catch(err => console.error('Error cargando predicciones:', err));
