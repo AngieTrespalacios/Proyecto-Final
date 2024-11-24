@@ -17418,58 +17418,65 @@ const App = () => {
   ];
 
   // Cargar datos de los archivos CSV al iniciar la aplicación
-  useEffect(() => {
-    // Cargar modelos
-    fetch('/modelos.csv')
-      .then(response => response.text())
-      .then(text => {
-        const lines = text.trim().split('\n');
-        const modelosData = {};
-        lines.slice(1).forEach(line => {
-          const [id, modelo, mae] = line.split(/\t/); // Separar por tabulación
-          modelosData[id.trim()] = {
-            modelo: modelo.trim(),
-            mae: parseFloat(mae.trim().replace(',', '.')), // Reemplazar coma por punto
-          };
-        });
-        console.log('Modelos cargados:', modelosData); // Debug
-        setModelos(modelosData);
-      })
-      .catch(err => console.error('Error cargando modelos:', err));
+    useEffect(() => {
+        const basePath = process.env.PUBLIC_URL || '';
+    
+        // Cargar modelos
+        fetch(`${basePath}/modelos.csv`)
+        .then(response => response.text())
+        .then(text => {
+            const lines = text.trim().split('\n');
+            const modelosData = {};
+            lines.slice(1).forEach(line => {
+            const [id, modelo, mae] = line.split(/\t/);
+            modelosData[id.trim()] = {
+                modelo: modelo.trim(),
+                mae: parseFloat(mae.trim().replace(',', '.')),
+            };
+            });
+            console.log('Modelos cargados:', modelosData); // Debug
+            setModelos(modelosData);
+        })
+        .catch(err => console.error('Error cargando modelos:', err));
+    
+        // Cargar predicciones
+        fetch(`${basePath}/predicciones.csv`)
+        .then(response => response.text())
+        .then(text => {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(/\t/).map(header => header.trim());
+            const prediccionesData = {};
+    
+            lines.slice(1).forEach(line => {
+            const values = line.split(/\t/).map(value => value.trim());
+            const id = values[0];
+            const prediccionesMes = {};
+    
+            headers.slice(1).forEach((month, index) => {
+                const valor = parseFloat(values[index + 1]?.replace(',', '.'));
+                prediccionesMes[month] = isNaN(valor) ? 0 : valor;
+            });
+    
+            prediccionesData[id] = prediccionesMes;
+            });
+    
+            console.log('Predicciones cargadas:', prediccionesData); // Debug
+            setPredicciones(prediccionesData);
+        })
+        .catch(err => console.error('Error cargando predicciones:', err));
+    }, []);
   
-    // Cargar predicciones
-    fetch('/predicciones.csv')
-      .then(response => response.text())
-      .then(text => {
-        const lines = text.trim().split('\n');
-        const headers = lines[0].split(/\t/).map(header => header.trim());
-        const prediccionesData = {};
+
   
-        lines.slice(1).forEach(line => {
-          const values = line.split(/\t/).map(value => value.trim());
-          const id = values[0];
-          const prediccionesMes = {};
-  
-          headers.slice(1).forEach((month, index) => {
-            const valor = parseFloat(values[index + 1]?.replace(',', '.'));
-            prediccionesMes[month] = isNaN(valor) ? 0 : valor;
-          });
-  
-          prediccionesData[id] = prediccionesMes;
-        });
-  
-        console.log('Predicciones cargadas:', prediccionesData); // Debug
-        setPredicciones(prediccionesData);
-      })
-      .catch(err => console.error('Error cargando predicciones:', err));
-  }, []);
 
   // Función para manejar el ingreso del ID_ART
-  const handleInputChange = (e) => {
-    setIdArt(e.target.value);
-    setError('');
-    setSelectedPrediction(null);
-  };
+const handleInputChange = (e) => {
+  const inputValue = e.target.value.trim().toUpperCase(); // Normaliza el ID
+  setIdArt(inputValue);
+  setError('');
+  setSelectedPrediction(null);
+};
+
 
   // Función para graficar la demanda
   const handleGraficar = () => {
@@ -17499,21 +17506,34 @@ const App = () => {
   };
 
   // Manejar la selección de un periodo de predicción
-  const handlePredictionClick = (month) => {
-    const modeloData = modelos[idArt];
-    const prediccion = predicciones[idArt]?.[month];
-  
-    if (modeloData && prediccion !== undefined) {
-      setSelectedPrediction({
-        modelo: modeloData.modelo,
-        mae: modeloData.mae,
-        month,
-        prediccion,
-      });
-    } else {
-      setSelectedPrediction(null);
-    }
-  };
+const handlePredictionClick = (month) => {
+  console.log("ID_ART:", idArt);
+  console.log("Mes seleccionado:", month);
+  console.log("Modelo correspondiente:", modelos[idArt]);
+  console.log("Predicción correspondiente:", predicciones[idArt]?.[month]);
+
+  const modeloData = modelos[idArt];
+  const prediccion = predicciones[idArt]?.[month];
+
+  if (modeloData && prediccion !== undefined) {
+    setSelectedPrediction({
+      modelo: modeloData.modelo,
+      mae: modeloData.mae,
+      month,
+      prediccion,
+    });
+    console.log("Predicción seleccionada:", {
+      modelo: modeloData.modelo,
+      mae: modeloData.mae,
+      month,
+      prediccion,
+    });
+  } else {
+    console.error("Datos faltantes o incorrectos:", { idArt, month, modeloData, prediccion });
+    setSelectedPrediction(null);
+  }
+};
+
   
 
   const handleLoginSuccess = () => {
@@ -17570,11 +17590,18 @@ const App = () => {
               <h3 style={{ color: '#d90429' }}>Seleccione un mes para la predicción:</h3>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
                 {['Sep_2024', 'Oct_2024', 'Nov_2024', 'Dic_2024', 'Ene_2025', 'Feb_2025', 'Mar_2025', 'Abr_2025', 'May_2025', 'Jun_2025', 'Jul_2025', 'Ago_2025']
-                  .map((month, index) => (
-                    <button key={index} onClick={() => handlePredictionClick(month)} style={{ padding: '10px 15px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px' }}>
-                      {month}
+                .map((month, index) => (
+                    <button
+                    key={index}
+                    onClick={() => {
+                        console.log("Botón presionado para mes:", month);
+                        handlePredictionClick(month);
+                    }}
+                    style={{ padding: '10px 15px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px' }}
+                    >
+                    {month}
                     </button>
-                  ))}
+                ))}
               </div>
             </div>
           )}
