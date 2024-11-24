@@ -15,7 +15,7 @@ const App = () => {
   const [modelos, setModelos] = useState({});
   const [predicciones, setPredicciones] = useState({});
   const [selectedPrediction, setSelectedPrediction] = useState(null);
-  const [background, setBackground] = useState('url("/background.jpg")'); // Fondo de imagen por defecto
+  const [background, setBackground] = useState(`${process.env.PUBLIC_URL}/background.jpg`); // Fondo de imagen por defecto
 
   // Datos de ejemplo
   const data = [
@@ -17419,20 +17419,24 @@ const App = () => {
 
   // Cargar datos de los archivos CSV al iniciar la aplicación
   useEffect(() => {
-    // Cargar modelos con MAE
+    // Cargar modelos
     fetch('/modelos.csv')
       .then(response => response.text())
       .then(text => {
         const lines = text.trim().split('\n');
         const modelosData = {};
         lines.slice(1).forEach(line => {
-          const [id, modelo, mae] = line.split(/\t/); // Utilizamos tabulación como separador
-          modelosData[id.trim()] = { modelo: modelo.trim(), mae: parseFloat(mae.replace(',', '.')) }; // Guardar modelo y MAE
+          const [id, modelo, mae] = line.split(/\t/); // Separar por tabulación
+          modelosData[id.trim()] = {
+            modelo: modelo.trim(),
+            mae: parseFloat(mae.trim().replace(',', '.')), // Reemplazar coma por punto
+          };
         });
+        console.log('Modelos cargados:', modelosData);
         setModelos(modelosData);
       })
-      .catch(err => console.error("Error cargando modelos:", err));
-  
+      .catch(err => console.error('Error cargando modelos:', err));
+
     // Cargar predicciones
     fetch('/predicciones.csv')
       .then(response => response.text())
@@ -17440,25 +17444,25 @@ const App = () => {
         const lines = text.trim().split('\n');
         const headers = lines[0].split(/\t/).map(header => header.trim());
         const prediccionesData = {};
-  
+
         lines.slice(1).forEach(line => {
           const values = line.split(/\t/).map(value => value.trim());
           const id = values[0];
           const prediccionesMes = {};
-  
+
           headers.slice(1).forEach((month, index) => {
             const valor = parseFloat(values[index + 1]?.replace(',', '.'));
             prediccionesMes[month] = isNaN(valor) ? 0 : valor;
           });
-  
+
           prediccionesData[id] = prediccionesMes;
         });
-  
+
+        console.log('Predicciones cargadas:', prediccionesData);
         setPredicciones(prediccionesData);
       })
-      .catch(err => console.error("Error cargando predicciones:", err));
+      .catch(err => console.error('Error cargando predicciones:', err));
   }, []);
-  
 
   // Función para manejar el ingreso del ID_ART
   const handleInputChange = (e) => {
@@ -17519,14 +17523,14 @@ const App = () => {
 
   return (
     <div
-      style={{
+    style={{
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundImage: loggedIn ? 'none' : background, // Si está logueado, no usar la imagen de fondo
-        backgroundColor: loggedIn ? 'white' : '', // Fondo blanco al iniciar sesión
+        backgroundImage: loggedIn ? 'none' : `url(${background})`,
+        backgroundColor: loggedIn ? 'white' : '', // Fondo blanco si está logueado
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         color: '#000',
