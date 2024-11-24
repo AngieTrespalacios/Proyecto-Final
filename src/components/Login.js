@@ -6,7 +6,7 @@ const Login = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
 
   const handleLogin = () => {
-    if (username === 'Proyecto final' && password === 'pf_2024*') {
+    if (username === 'proyecto final' && password === 'pf_2024*') {
       onLoginSuccess();
     } else {
       setError('Usuario o contraseña incorrectos');
